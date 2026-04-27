@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Officers - Smart Traffic System{% endblock %}
+{% block content %}
+<div class="page-header fade-in">
+    <div><h1>Traffic Officers</h1><p>Manage traffic enforcement officers</p></div>
+</div>
+
+<div class="grid-3-1 fade-in">
+    <div class="card">
+        <div class="card-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+            Add New Officer
+        </div>
+        <form method="POST" action="{{ url_for('officers') }}">
+            <div class="form-group"><label>Full Name *</label><input type="text" name="name" class="form-control" required></div>
+            <div class="form-group"><label>Badge Number *</label><input type="text" name="badge_number" class="form-control" required></div>
+            <div class="form-group"><label>Department</label><input type="text" name="department" class="form-control"></div>
+            <div class="form-group"><label>Contact</label><input type="text" name="contact" class="form-control"></div>
+            <button type="submit" class="btn btn-primary btn-block">Register Officer</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="card-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+            All Officers ({{ officers|length }})
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>ID</th><th>Name</th><th>Badge No.</th><th>Department</th><th>Contact</th><th>Violations Issued</th><th></th></tr></thead>
+                <tbody>
+                {% for o in officers %}
+                <tr>
+                    <td>{{ o.officer_id }}</td>
+                    <td><strong>{{ o.name }}</strong></td>
+                    <td>{{ o.badge_number }}</td>
+                    <td>{{ o.department or '—' }}</td>
+                    <td>{{ o.contact or '—' }}</td>
+                    <td>{{ o.violations_issued|length }}</td>
+                    <td><a href="{{ url_for('delete_officer', id=o.officer_id) }}" class="action-delete" onclick="return confirm('Delete this officer?')">Delete</a></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="empty-state">No officers registered yet.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

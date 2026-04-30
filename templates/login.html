@@ -14,20 +14,29 @@
             {% endif %}
         {% endwith %}
 
+        <div style="display: flex; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <div id="tab-admin" style="flex: 1; text-align: center; padding: 10px; cursor: pointer; border-bottom: 2px solid var(--primary); color: white; font-weight: bold;" onclick="document.getElementById('role_text').textContent='Admin'">Admin Login</div>
+            <div id="tab-user" style="flex: 1; text-align: center; padding: 10px; cursor: pointer; color: var(--text-muted);" onclick="this.style.borderBottom='2px solid var(--primary)'; this.style.color='white'; this.style.fontWeight='bold'; document.getElementById('tab-admin').style.borderBottom='none'; document.getElementById('tab-admin').style.color='var(--text-muted)'; document.getElementById('tab-admin').style.fontWeight='normal'; document.getElementById('role_text').textContent='User'">User Login</div>
+        </div>
+
         <form method="POST" action="{{ url_for('login') }}">
+            <div style="margin-bottom: 15px; text-align: center; font-size: 0.9rem; color: var(--text-secondary);">Logging in as: <strong id="role_text" style="color: white;">Admin</strong></div>
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" class="form-control" placeholder="Enter username" required>
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="password" style="display: flex; justify-content: space-between;">
+                    Password 
+                    <a href="{{ url_for('forgot_password') }}" style="color: var(--primary); font-size: 0.8rem; text-decoration: none;">Forgot Password?</a>
+                </label>
                 <input type="password" id="password" name="password" class="form-control" placeholder="Enter password" required>
             </div>
             <button type="submit" class="btn btn-primary btn-block">Sign In</button>
         </form>
         <div class="login-footer">
             Don't have an account? <a href="{{ url_for('register') }}" style="color: var(--primary); text-decoration: none; font-weight: bold;">Sign up here</a><br><br>
-            Default &mdash; Username: <strong>admin</strong> | Password: <strong>admin123</strong>
+            <span style="color: var(--text-muted);">Admin default &mdash; <strong>admin</strong> / <strong>admin123</strong></span>
         </div>
     </div>
 </div>

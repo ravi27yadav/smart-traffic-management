@@ -91,6 +91,26 @@ def register():
         
     return render_template('register.html')
 
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    if request.method == 'POST':
+        username = request.form.get('username')
+        new_password = request.form.get('new_password')
+        
+        user = User.query.filter_by(username=username).first()
+        if user:
+            user.password_hash = generate_password_hash(new_password)
+            db.session.commit()
+            flash('Password reset successfully! You can now log in.', 'success')
+            return redirect(url_for('login'))
+        else:
+            flash('Username not found.', 'danger')
+            return redirect(url_for('forgot_password'))
+            
+    return render_template('forgot_password.html')
+
 # ============================================================
 # DASHBOARD
 # ============================================================

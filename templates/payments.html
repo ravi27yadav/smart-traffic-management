@@ -18,7 +18,7 @@
                 <select name="fine_id" class="form-control" required>
                     <option value="">Select Fine...</option>
                     {% for f in unpaid_fines %}
-                    <option value="{{ f.fine_id }}">
+                    <option value="{{ f.fine_id }}" data-amount="{{ f.amount }}">
                         Fine #{{ f.fine_id }} — ₹{{ "{:,.0f}".format(f.amount) }} | {{ f.violation.violation_type }} | {{ f.violation.vehicle.license_plate }}
                     </option>
                     {% endfor %}
@@ -32,6 +32,13 @@
                     <option value="Online">Online</option>
                 </select>
             </div>
+            
+            <!-- QR Code Section -->
+            <div class="form-group" id="qr_section" style="display: none; text-align: center; margin-top: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                <p style="margin-bottom: 0.5rem; font-size: 0.9rem;">Scan to Pay (<span id="qr_amount"></span>)</p>
+                <img id="qr_image" src="" alt="UPI QR Code" style="width: 150px; height: 150px; border-radius: 4px; border: 4px solid white;">
+            </div>
+
             <button type="submit" class="btn btn-success btn-block">Process Payment</button>
         </form>
         {% else %}
@@ -72,4 +79,28 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fineSelect = document.querySelector('select[name="fine_id"]');
+    const qrSection = document.getElementById('qr_section');
+    const qrImage = document.getElementById('qr_image');
+    const qrAmountText = document.getElementById('qr_amount');
+
+    if (fineSelect) {
+        fineSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                const amount = selectedOption.getAttribute('data-amount');
+                qrAmountText.textContent = '₹' + amount;
+                const upiString = `upi://pay?pa=trafficpolice@bank&pn=Traffic%20Department&am=${amount}&cu=INR`;
+                qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiString)}`;
+                qrSection.style.display = 'block';
+            } else {
+                qrSection.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

@@ -12,8 +12,8 @@ from models import db, User, Driver, Vehicle, TrafficOfficer, Violation, Fine, P
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'smart-traffic-secret-2026'
 
-password = urllib.parse.quote_plus('Ravi@123')
-app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://root:{password}@localhost/smarttrafficdb'
+# PythonAnywhere Free Tier Fallback to SQLite
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///smarttraffic.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
@@ -66,6 +66,30 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('login'))
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists. Please choose a different one.', 'danger')
+            return redirect(url_for('register'))
+            
+        new_user = User(
+            username=username,
+            password_hash=generate_password_hash(password),
+            role='user'
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        flash('Account created successfully! You can now log in.', 'success')
+        return redirect(url_for('login'))
+        
+    return render_template('register.html')
 
 # ============================================================
 # DASHBOARD

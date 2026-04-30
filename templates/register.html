@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Login - Smart Traffic System{% endblock %}
+{% block title %}Register - Smart Traffic System{% endblock %}
 {% block fullpage %}
 <div class="login-wrapper">
     <div class="login-card fade-in">
         <h1>🚦 Smart Traffic System</h1>
-        <p class="subtitle">Violation & Fine Management</p>
+        <p class="subtitle">Create an Account</p>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -14,20 +14,19 @@
             {% endif %}
         {% endwith %}
 
-        <form method="POST" action="{{ url_for('login') }}">
+        <form method="POST" action="{{ url_for('register') }}">
             <div class="form-group">
-                <label for="username">Username</label>
+                <label for="username">Choose Username</label>
                 <input type="text" id="username" name="username" class="form-control" placeholder="Enter username" required>
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="password">Choose Password</label>
                 <input type="password" id="password" name="password" class="form-control" placeholder="Enter password" required>
             </div>
-            <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+            <button type="submit" class="btn btn-primary btn-block">Sign Up</button>
         </form>
         <div class="login-footer">
-            Don't have an account? <a href="{{ url_for('register') }}" style="color: var(--primary); text-decoration: none; font-weight: bold;">Sign up here</a><br><br>
-            Default &mdash; Username: <strong>admin</strong> | Password: <strong>admin123</strong>
+            Already have an account? <a href="{{ url_for('login') }}" style="color: var(--primary); text-decoration: none; font-weight: bold;">Sign in here</a>
         </div>
     </div>
 </div>

@@ -2,6 +2,9 @@
 
 A modern, full-stack web application for managing traffic violations, drivers, vehicles, fines, and payments — built with **Flask** and **MySQL**.
 
+**🔴 Live Demo:** [https://ravi27yaduvanshi07.pythonanywhere.com](https://ravi27yaduvanshi07.pythonanywhere.com)
+*(Login: `admin` / `admin123`)*
+
 > **DBMS Project** — Demonstrates ER Modeling, Relational Schema Design, Complex SQL Queries, Normalization, Views, Triggers, Stored Procedures, ACID Transactions, and Full-Stack Application Development.
 
 ---

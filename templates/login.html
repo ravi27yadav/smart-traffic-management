@@ -1,43 +1,156 @@
 {% extends "base.html" %}
-{% block title %}Login - Smart Traffic System{% endblock %}
+
+{% block head %}
+<style>
+    body {
+        background-color: #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .auth-container {
+        background: white;
+        padding: 2.5rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+    }
+    .auth-container h2 {
+        margin-bottom: 0.5rem;
+        color: #111827;
+        font-size: 1.75rem;
+    }
+    .auth-container p {
+        color: #6b7280;
+        margin-bottom: 2rem;
+    }
+    .form-group {
+        margin-bottom: 1.25rem;
+        text-align: left;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #374151;
+        font-size: 0.9rem;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+    }
+    .form-group input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .btn-submit {
+        width: 100%;
+        padding: 0.875rem;
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        margin-top: 0.5rem;
+    }
+    .btn-submit:hover {
+        background-color: #2563eb;
+    }
+    .alert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+    }
+    .alert-danger { background-color: #fee2e2; color: #991b1b; }
+    .alert-success { background-color: #d1fae5; color: #065f46; }
+    .auth-links {
+        margin-top: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+    }
+    .auth-links a {
+        color: #3b82f6;
+        text-decoration: none;
+    }
+    .auth-links a:hover {
+        text-decoration: underline;
+    }
+    .role-toggle {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .role-toggle a {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #6b7280;
+        background: #f3f4f6;
+    }
+    .role-toggle a.active {
+        background: #e0e7ff;
+        color: #4f46e5;
+    }
+</style>
+{% endblock %}
+
 {% block fullpage %}
-<div class="login-wrapper">
-    <div class="login-card fade-in">
-        <h1>🚦 Smart Traffic System</h1>
-        <p class="subtitle">Violation & Fine Management</p>
+<div class="auth-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+    <h2>Sign in</h2>
+    <p>Access your traffic management portal</p>
 
-        <div style="display: flex; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-            <div id="tab-admin" style="flex: 1; text-align: center; padding: 10px; cursor: pointer; border-bottom: 2px solid var(--primary); color: white; font-weight: bold;" onclick="document.getElementById('role_text').textContent='Admin'">Admin Login</div>
-            <div id="tab-user" style="flex: 1; text-align: center; padding: 10px; cursor: pointer; color: var(--text-muted);" onclick="this.style.borderBottom='2px solid var(--primary)'; this.style.color='white'; this.style.fontWeight='bold'; document.getElementById('tab-admin').style.borderBottom='none'; document.getElementById('tab-admin').style.color='var(--text-muted)'; document.getElementById('tab-admin').style.fontWeight='normal'; document.getElementById('role_text').textContent='User'">User Login</div>
+    <div class="role-toggle">
+        <a href="{{ url_for('login_user_route') }}" class="{% if login_type == 'user' %}active{% endif %}">User Login</a>
+        <a href="{{ url_for('login_admin') }}" class="{% if login_type == 'admin' %}active{% endif %}">Admin Login</a>
+    </div>
+
+    <form method="POST">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required autocomplete="username">
         </div>
-
-        <form method="POST" action="{{ url_for('login') }}">
-            <div style="margin-bottom: 15px; text-align: center; font-size: 0.9rem; color: var(--text-secondary);">Logging in as: <strong id="role_text" style="color: white;">Admin</strong></div>
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" class="form-control" placeholder="Enter username" required>
-            </div>
-            <div class="form-group">
-                <label for="password" style="display: flex; justify-content: space-between;">
-                    Password 
-                    <a href="{{ url_for('forgot_password') }}" style="color: var(--primary); font-size: 0.8rem; text-decoration: none;">Forgot Password?</a>
-                </label>
-                <input type="password" id="password" name="password" class="form-control" placeholder="Enter password" required>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">Sign In</button>
-        </form>
-        <div class="login-footer">
-            Don't have an account? <a href="{{ url_for('register') }}" style="color: var(--primary); text-decoration: none; font-weight: bold;">Sign up here</a><br><br>
-            <span style="color: var(--text-muted);">Admin default &mdash; <strong>admin</strong> / <strong>admin123</strong></span>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required autocomplete="current-password">
         </div>
+        <button type="submit" class="btn-submit">
+            {% if login_type == 'admin' %}Sign in as Admin{% else %}Sign in as User{% endif %}
+        </button>
+    </form>
+
+    <div class="auth-links">
+        <a href="{{ url_for('forgot_password') }}">Forgot your password?</a>
+        {% if login_type == 'user' %}
+            <span style="color: #6b7280;">Don't have an account? <a href="{{ url_for('register') }}">Sign up</a></span>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

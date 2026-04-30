@@ -6,9 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import func
 from models import db, User, Driver, Vehicle, TrafficOfficer, Violation, Fine, Payment
 
-# ============================================================
-# APP CONFIGURATION
-# ============================================================
+# Configuration and app setup
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'smart-traffic-secret-2026'
 
@@ -18,54 +16,68 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'
+login_manager.login_view = 'login_user_route'
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# ============================================================
-# INITIALIZATION
-# ============================================================
+# Initialize the database and create a default admin if none exists
 def init_db():
     with app.app_context():
         db.create_all()
-        if not User.query.filter_by(username='admin').first():
-            admin = User(username='admin',
-                         password_hash=generate_password_hash('admin123'),
-                         role='admin')
+        admin = User.query.filter_by(username='admin').first()
+        if not admin:
+            admin = User(
+                username='admin',
+                email='admin@smarttraffic.com',
+                phone='0000000000',
+                password_hash=generate_password_hash('admin123'),
+                role='admin'
+            )
             db.session.add(admin)
             db.session.commit()
         else:
-            user = User.query.filter_by(username='admin').first()
-            if not check_password_hash(user.password_hash, 'admin123'):
-                user.password_hash = generate_password_hash('admin123')
+            if not check_password_hash(admin.password_hash, 'admin123'):
+                admin.password_hash = generate_password_hash('admin123')
                 db.session.commit()
 
-# ============================================================
-# AUTH ROUTES
-# ============================================================
+# Authentication routes
 @app.route('/')
 def index():
-    return redirect(url_for('dashboard')) if current_user.is_authenticated else redirect(url_for('login'))
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('login_user_route'))
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
+@app.route('/login/admin', methods=['GET', 'POST'])
+def login_admin():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
         user = User.query.filter_by(username=request.form.get('username')).first()
-        if user and check_password_hash(user.password_hash, request.form.get('password')):
+        if user and user.role == 'admin' and check_password_hash(user.password_hash, request.form.get('password')):
             login_user(user)
             return redirect(url_for('dashboard'))
-        flash('Invalid username or password.', 'danger')
-    return render_template('login.html')
+        flash('Invalid admin credentials.', 'danger')
+    return render_template('login.html', login_type='admin')
+
+@app.route('/login/user', methods=['GET', 'POST'])
+def login_user_route():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    if request.method == 'POST':
+        user = User.query.filter_by(username=request.form.get('username')).first()
+        if user and user.role == 'user' and check_password_hash(user.password_hash, request.form.get('password')):
+            login_user(user)
+            return redirect(url_for('dashboard'))
+        flash('Invalid user credentials.', 'danger')
+    return render_template('login.html', login_type='user')
 
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('login'))
+    return redirect(url_for('login_user_route'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -73,21 +85,25 @@ def register():
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
         username = request.form.get('username')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
         password = request.form.get('password')
         
-        if User.query.filter_by(username=username).first():
-            flash('Username already exists. Please choose a different one.', 'danger')
+        if User.query.filter((User.username == username) | (User.email == email) | (User.phone == phone)).first():
+            flash('Username, email, or phone already exists.', 'danger')
             return redirect(url_for('register'))
             
         new_user = User(
             username=username,
+            email=email,
+            phone=phone,
             password_hash=generate_password_hash(password),
             role='user'
         )
         db.session.add(new_user)
         db.session.commit()
-        flash('Account created successfully! You can now log in.', 'success')
-        return redirect(url_for('login'))
+        flash('Account created successfully! Please log in.', 'success')
+        return redirect(url_for('login_user_route'))
         
     return render_template('register.html')
 
@@ -96,24 +112,22 @@ def forgot_password():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
-        username = request.form.get('username')
+        identifier = request.form.get('identifier') # Can be email or phone
         new_password = request.form.get('new_password')
         
-        user = User.query.filter_by(username=username).first()
+        user = User.query.filter((User.email == identifier) | (User.phone == identifier)).first()
         if user:
             user.password_hash = generate_password_hash(new_password)
             db.session.commit()
-            flash('Password reset successfully! You can now log in.', 'success')
-            return redirect(url_for('login'))
+            flash('Password reset successful! You can now log in.', 'success')
+            return redirect(url_for('login_user_route'))
         else:
-            flash('Username not found.', 'danger')
+            flash('No account found with that email or phone number.', 'danger')
             return redirect(url_for('forgot_password'))
             
     return render_template('forgot_password.html')
 
-# ============================================================
-# DASHBOARD
-# ============================================================
+# Dashboard metrics and analytics
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -167,9 +181,7 @@ def chart_data():
         'officer_labels': [r[0] for r in officer_rows], 'officer_data': [r[1] for r in officer_rows],
     })
 
-# ============================================================
-# DRIVERS CRUD
-# ============================================================
+# Drivers management routes
 @app.route('/drivers', methods=['GET', 'POST'])
 @login_required
 def drivers():
@@ -197,9 +209,7 @@ def delete_driver(id):
     flash('Driver deleted.', 'success')
     return redirect(url_for('drivers'))
 
-# ============================================================
-# VEHICLES CRUD
-# ============================================================
+# Vehicle management
 @app.route('/vehicles', methods=['GET', 'POST'])
 @login_required
 def vehicles():
@@ -224,9 +234,7 @@ def delete_vehicle(id):
     flash('Vehicle deleted.', 'success')
     return redirect(url_for('vehicles'))
 
-# ============================================================
-# OFFICERS CRUD
-# ============================================================
+# Traffic officer records
 @app.route('/officers', methods=['GET', 'POST'])
 @login_required
 def officers():
@@ -249,9 +257,7 @@ def delete_officer(id):
     flash('Officer deleted.', 'success')
     return redirect(url_for('officers'))
 
-# ============================================================
-# VIOLATIONS & FINES
-# ============================================================
+# Fines and Violations tracking
 FINE_AMOUNTS = {'Speeding': 2000, 'Red Light': 5000, 'No Helmet': 1500,
                 'Illegal Parking': 1000, 'DUI': 10000, 'Wrong Way': 5000, 'Using Phone': 2000}
 
@@ -277,9 +283,7 @@ def violations():
                            vehicles=Vehicle.query.all(), officers=TrafficOfficer.query.all(),
                            fine_amounts=FINE_AMOUNTS)
 
-# ============================================================
-# PAYMENTS (Demonstrates ACID Transactions)
-# ============================================================
+# Payment processing with transactional safety
 @app.route('/payments', methods=['GET', 'POST'])
 @login_required
 def payments():
@@ -308,9 +312,7 @@ def payments():
     all_payments = Payment.query.order_by(Payment.date_paid.desc()).all()
     return render_template('payments.html', unpaid_fines=unpaid, payments=all_payments)
 
-# ============================================================
-# RUN
-# ============================================================
+# App entry point
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, port=5000)

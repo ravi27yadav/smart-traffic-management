@@ -321,7 +321,6 @@ def violations():
                            vehicles=Vehicle.query.all(), officers=TrafficOfficer.query.all(),
                            fine_amounts=FINE_AMOUNTS)
 
-# Payment processing with transactional safety
 @app.route('/payments', methods=['GET', 'POST'])
 @login_required
 def payments():
@@ -346,9 +345,27 @@ def payments():
             flash(f'Transaction failed: {str(e)}', 'danger')
         return redirect(url_for('payments'))
 
-    unpaid = Fine.query.filter(Fine.status != 'Paid').all()
-    all_payments = Payment.query.order_by(Payment.date_paid.desc()).all()
-    return render_template('payments.html', unpaid_fines=unpaid, payments=all_payments)
+    search_plate = request.args.get('search_plate', '')
+    
+    unpaid_query = Fine.query.filter(Fine.status != 'Paid')
+    payments_query = Payment.query.order_by(Payment.date_paid.desc())
+    violations_query = Violation.query.order_by(Violation.date_time.desc())
+    
+    if search_plate:
+        unpaid_query = unpaid_query.join(Violation).join(Vehicle).filter(Vehicle.license_plate.ilike(f'%{search_plate}%'))
+        payments_query = payments_query.join(Fine).join(Violation).join(Vehicle).filter(Vehicle.license_plate.ilike(f'%{search_plate}%'))
+        violations_query = violations_query.join(Vehicle).filter(Vehicle.license_plate.ilike(f'%{search_plate}%'))
+    elif current_user.role != 'admin':
+        # Normal users must search a plate to see anything
+        unpaid_query = unpaid_query.filter(False)
+        payments_query = payments_query.filter(False)
+    
+    unpaid = unpaid_query.all()
+    all_payments = payments_query.all()
+    all_violations = violations_query.all() if search_plate else []
+
+    return render_template('payments.html', unpaid_fines=unpaid, payments=all_payments, 
+                           search_plate=search_plate, violations=all_violations)
 
 # App entry point
 if __name__ == '__main__':

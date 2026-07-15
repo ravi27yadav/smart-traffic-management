@@ -127,7 +127,45 @@ def forgot_password():
             
     return render_template('forgot_password.html')
 
-# Dashboard metrics and analytics
+# ============================================================
+# USERS CRUD (Admin Only)
+# ============================================================
+@app.route('/users_admin', methods=['GET', 'POST'])
+@login_required
+def users_admin():
+    if current_user.role != 'admin':
+        flash('Access denied. Admins only.', 'danger')
+        return redirect(url_for('dashboard'))
+        
+    if request.method == 'POST':
+        action = request.form.get('action')
+        user_id = request.form.get('user_id')
+        user = User.query.get(user_id)
+        
+        if not user:
+            flash('User not found.', 'danger')
+        elif action == 'impersonate':
+            login_user(user)
+            flash(f'Now logged in as {user.username}', 'success')
+            return redirect(url_for('dashboard'))
+        elif action == 'reset_password':
+            new_pass = request.form.get('new_password')
+            user.password_hash = generate_password_hash(new_pass)
+            db.session.commit()
+            flash(f'Password reset for {user.username}', 'success')
+        elif action == 'delete' and user.username != 'admin':
+            db.session.delete(user)
+            db.session.commit()
+            flash(f'User {user.username} deleted.', 'success')
+            
+        return redirect(url_for('users_admin'))
+        
+    all_users = User.query.order_by(User.user_id.desc()).all()
+    return render_template('users_admin.html', users=all_users)
+
+# ============================================================
+# DASHBOARD
+# ============================================================
 @app.route('/dashboard')
 @login_required
 def dashboard():
